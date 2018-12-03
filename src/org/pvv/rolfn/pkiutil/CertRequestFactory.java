@@ -9,8 +9,11 @@ import java.security.Signature;
 import java.security.SignatureException;
 import java.security.cert.CertificateException;
 
+import sun.security.pkcs.PKCS9Attribute;
 import sun.security.pkcs10.PKCS10;
+import sun.security.pkcs10.PKCS10Attribute;
 import sun.security.pkcs10.PKCS10Attributes;
+import sun.security.util.ObjectIdentifier;
 import sun.security.x509.CertificateExtensions;
 import sun.security.x509.Extension;
 import sun.security.x509.GeneralName;
@@ -53,9 +56,15 @@ public class CertRequestFactory {
 		this.name = new X500Name(distinguishedName);
 	}
 
+	private PKCS10Attribute attr(ObjectIdentifier oid, Object value) {
+		return new PKCS10Attribute(new PKCS9Attribute(oid, value));
+	}
+	
 	public void addExtensionRequest(String name, Extension e) throws IOException {
 		if(ext == null) {
 			ext = new CertificateExtensions();
+			PKCS10Attribute a = attr(PKCS9Attribute.EXTENSION_REQUEST_OID, ext);
+			this.attr.setAttribute(a.getAttributeId().toString(), a);
 		}
 		ext.set(name, e);
 	}
@@ -69,8 +78,10 @@ public class CertRequestFactory {
 		return names;
 	}
 	
-	public void addSubjectAlternativeName(GeneralNameInterface name) throws IOException {
-		getSAN().add(new GeneralName(name));
+	public void addSubjectAlternativeName(GeneralNameInterface... names) throws IOException {
+		for(GeneralNameInterface n: names) {
+			getSAN().add(new GeneralName(n));
+	  }	
 	}
 	
     public static KeyPair getRSAKeyPair() throws NoSuchAlgorithmException {

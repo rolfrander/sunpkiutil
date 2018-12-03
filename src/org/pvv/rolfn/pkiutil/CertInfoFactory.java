@@ -1,5 +1,7 @@
 package org.pvv.rolfn.pkiutil;
+import sun.security.pkcs.PKCS9Attribute;
 import sun.security.pkcs10.PKCS10;
+import sun.security.pkcs10.PKCS10Attribute;
 import sun.security.util.ObjectIdentifier;
 import sun.security.x509.AlgorithmId;
 import sun.security.x509.AuthorityKeyIdentifierExtension;
@@ -11,11 +13,15 @@ import sun.security.x509.CertificateValidity;
 import sun.security.x509.CertificateVersion;
 import sun.security.x509.CertificateX509Key;
 import sun.security.x509.ExtendedKeyUsageExtension;
+import sun.security.x509.Extension;
+import sun.security.x509.GeneralName;
+import sun.security.x509.GeneralNameInterface;
+import sun.security.x509.GeneralNames;
 import sun.security.x509.KeyIdentifier;
 import sun.security.x509.KeyUsageExtension;
 import sun.security.x509.PKIXExtensions;
+import sun.security.x509.SubjectAlternativeNameExtension;
 import sun.security.x509.SubjectKeyIdentifierExtension;
-import sun.security.x509.X500Name;
 import sun.security.x509.X509CertInfo;
  
 import java.io.IOException;
@@ -46,6 +52,8 @@ public class CertInfoFactory {
 	
 	private X509CertInfo certInfo = new X509CertInfo();
 	private CertificateExtensions ext;
+
+	private GeneralNames names;
 	
 	private static final ObjectIdentifier oid(String id) {
 		try {
@@ -69,9 +77,10 @@ public class CertInfoFactory {
 		return certInfo;
 	}
 
-	private CertificateExtensions getExt() {
+	private CertificateExtensions getExt() throws CertificateException, IOException {
 		if(ext == null) {
 			ext = new CertificateExtensions();
+			certInfo.set(CertificateExtensions.NAME, ext);
 		}
 		return ext;
 	}
@@ -134,6 +143,17 @@ public class CertInfoFactory {
 	NoSuchProviderException, NoSuchAlgorithmException, InvalidKeyException, SignatureException {
 		setSubjectName(pkcs10.getSubjectName());
 		setPublicKey(pkcs10.getSubjectPublicKeyInfo());
+		PKCS10Attribute extAttribute = (PKCS10Attribute)pkcs10.getAttributes().getAttribute(PKCS9Attribute.EXTENSION_REQUEST_OID.toString());
+		if(extAttribute != null) {
+			ext = (CertificateExtensions) extAttribute.getAttributeValue();
+			if(ext != null) {
+				for(Extension e: ext.getAllExtensions()) {
+					if(e instanceof SubjectAlternativeNameExtension) {
+						getExt().set(SubjectAlternativeNameExtension.NAME, e);
+					}
+				}
+			}
+		}
 	}
 
 	public void setPublicKey(PublicKey publicKey) throws CertificateException, IOException, NoSuchAlgorithmException {
@@ -143,6 +163,20 @@ public class CertInfoFactory {
 
 	public void setSubjectName(Principal owner) throws CertificateException, IOException {
 		certInfo.set(X509CertInfo.SUBJECT, owner);
+	}
+
+	private GeneralNames getSAN() throws CertificateException, IOException {
+		if(names == null) {
+			names = new GeneralNames();
+			getExt().set(SubjectAlternativeNameExtension.NAME, new SubjectAlternativeNameExtension(names));
+		}
+		return names;
+	}
+	
+	public void addSan(GeneralNameInterface... names) throws CertificateException, IOException {
+		for(GeneralNameInterface n: names) {
+			getSAN().add(new GeneralName(n));
+	  }	
 	}
 	
 	public void setAlgorithm(AlgorithmId algorithm) throws CertificateException, IOException {
