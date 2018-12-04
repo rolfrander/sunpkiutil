@@ -10,6 +10,7 @@ import java.security.SignatureException;
 import java.security.cert.CertificateException;
 
 import org.junit.jupiter.api.Test;
+import org.pvv.rolfn.pkiutil.sun.SunCertRequestFactory;
 
 import sun.security.pkcs.PKCS9Attribute;
 import sun.security.pkcs10.PKCS10;
@@ -40,7 +41,7 @@ class TestCertRequest {
 
 	public static PKCS10 getPkcs10() throws NoSuchAlgorithmException, IOException, CertificateException, SignatureException,
 			InvalidKeyException {
-		CertRequestFactory crf = CertRequestFactory.newFactory(CertRequestFactory.getRSAKeyPair());
+		CertRequestFactory crf = SunCertRequestFactory.newFactory(SunCertRequestFactory.getRSAKeyPair());
 		crf.setName(DN);
 		crf.addSubjectAlternativeName(new DNSName(DNS));
 		PKCS10 req = crf.build();

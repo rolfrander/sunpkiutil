@@ -13,6 +13,9 @@ import java.util.Base64;
 import java.util.Base64.Encoder;
 
 import org.junit.jupiter.api.Test;
+import org.pvv.rolfn.pkiutil.bc.BcCAService;
+import org.pvv.rolfn.pkiutil.sun.SunCAService;
+import org.pvv.rolfn.pkiutil.sun.SunCertRequestFactory;
 
 import sun.security.pkcs10.PKCS10;
 
@@ -21,11 +24,9 @@ class TestCAService {
 
 	@Test
 	void test() throws GeneralSecurityException, IOException {
-		KeyPair caKeyPair = CertRequestFactory.getRSAKeyPair();
-		CAService ca = new CAService("C=NO, O=rrn internett, OU=test, CN=CA-1", caKeyPair);
-		PKCS10 req1 = TestCertRequest.getPkcs10();
-		PKCS10 req2 = new PKCS10(req1.getEncoded());
-		X509Certificate cert = ca.generateCertificate(req2);
+		KeyPair caKeyPair = SunCertRequestFactory.getRSAKeyPair();
+		CAService ca = new BcCAService("C=NO, O=rrn internett, OU=test, CN=CA-1", caKeyPair);
+		X509Certificate cert = ca.generateCertificate(TestCertRequest.getPkcs10().getEncoded());
 		// TODO virker ikke:
 		// - subject alternative name
 		// - authority key identifier

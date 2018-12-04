@@ -1,4 +1,4 @@
-package org.pvv.rolfn.pkiutil;
+package org.pvv.rolfn.pkiutil.sun;
 
 import java.io.IOException;
 import java.security.InvalidKeyException;
@@ -8,6 +8,8 @@ import java.security.NoSuchAlgorithmException;
 import java.security.Signature;
 import java.security.SignatureException;
 import java.security.cert.CertificateException;
+
+import org.pvv.rolfn.pkiutil.CertRequestFactory;
 
 import sun.security.pkcs.PKCS9Attribute;
 import sun.security.pkcs10.PKCS10;
@@ -27,7 +29,7 @@ import sun.security.x509.X500Name;
  * @author norolnes
  *
  */
-public class CertRequestFactory {
+public class SunCertRequestFactory implements CertRequestFactory {
 	
 	private KeyPair keyPair;
 	private PKCS10Attributes attr;
@@ -36,14 +38,17 @@ public class CertRequestFactory {
 	private GeneralNames names;
 	
 	public static CertRequestFactory newFactory(KeyPair kp) {
-		return new CertRequestFactory(kp);
+		return new SunCertRequestFactory(kp);
 	}
 	
-	protected CertRequestFactory(KeyPair kp) {
+	protected SunCertRequestFactory(KeyPair kp) {
 		this.keyPair = kp;
 		this.attr = new PKCS10Attributes();
 	}
 
+	/* (non-Javadoc)
+	 * @see org.pvv.rolfn.pkiutil.sun.CertRequestFactory#build()
+	 */
 	public PKCS10 build() throws NoSuchAlgorithmException, CertificateException, SignatureException, IOException, InvalidKeyException {
 		PKCS10 req = new PKCS10(keyPair.getPublic(), attr);
 		Signature signature = Signature.getInstance("SHA256withRSA");
@@ -52,6 +57,9 @@ public class CertRequestFactory {
 		return req;
 	}
 	
+	/* (non-Javadoc)
+	 * @see org.pvv.rolfn.pkiutil.sun.CertRequestFactory#setName(java.lang.String)
+	 */
 	public void setName(String distinguishedName) throws IOException {
 		this.name = new X500Name(distinguishedName);
 	}
@@ -60,6 +68,9 @@ public class CertRequestFactory {
 		return new PKCS10Attribute(new PKCS9Attribute(oid, value));
 	}
 	
+	/* (non-Javadoc)
+	 * @see org.pvv.rolfn.pkiutil.sun.CertRequestFactory#addExtensionRequest(java.lang.String, sun.security.x509.Extension)
+	 */
 	public void addExtensionRequest(String name, Extension e) throws IOException {
 		if(ext == null) {
 			ext = new CertificateExtensions();
@@ -78,6 +89,9 @@ public class CertRequestFactory {
 		return names;
 	}
 	
+	/* (non-Javadoc)
+	 * @see org.pvv.rolfn.pkiutil.sun.CertRequestFactory#addSubjectAlternativeName(sun.security.x509.GeneralNameInterface)
+	 */
 	public void addSubjectAlternativeName(GeneralNameInterface... names) throws IOException {
 		for(GeneralNameInterface n: names) {
 			getSAN().add(new GeneralName(n));

@@ -1,4 +1,4 @@
-package org.pvv.rolfn.pkiutil;
+package org.pvv.rolfn.pkiutil.sun;
 
 import java.io.IOException;
 import java.security.GeneralSecurityException;
@@ -13,6 +13,8 @@ import java.security.cert.CertificateParsingException;
 import java.security.cert.X509Certificate;
 import java.util.Base64;
 
+import org.pvv.rolfn.pkiutil.CAService;
+
 import sun.security.pkcs10.PKCS10;
 import sun.security.x509.AlgorithmId;
 import sun.security.x509.CertificateAlgorithmId;
@@ -21,24 +23,24 @@ import sun.security.x509.X500Name;
 import sun.security.x509.X509CertImpl;
 import sun.security.x509.X509CertInfo;
 
-public class CAService {
+public class SunCAService implements CAService {
 	private X509Certificate caCert;
 	private KeyPair caKeyPair;
 	private AlgorithmId algorithm = new AlgorithmId(AlgorithmId.sha256WithRSAEncryption_oid);
 
-	public CAService(X509Certificate caCert, KeyPair caKeyPair) {
+	public SunCAService(X509Certificate caCert, KeyPair caKeyPair) {
 		this.caKeyPair = caKeyPair;
 		this.caCert = caCert;
 	}
 
-	public CAService(String name, KeyPair caKeyPair) throws GeneralSecurityException, IOException {
+	public SunCAService(String name, KeyPair caKeyPair) throws GeneralSecurityException, IOException {
 		this.caKeyPair = caKeyPair;
 		this.caCert = generateCaCertificate(name, caKeyPair);
 	}
 	
 	protected X509Certificate generateCaCertificate(String name, KeyPair keyPair) throws CertificateException, IOException, InvalidKeyException, NoSuchAlgorithmException, NoSuchProviderException, SignatureException {
 		X500Name dn = new X500Name(name);
-		CertInfoFactory cif = CertInfoFactory.newFactory();
+		SunCertInfoFactory cif = SunCertInfoFactory.newFactory();
 		cif.isCa(0);
 		cif.setValidity(3650);
 		cif.setAlgorithm(algorithm);
@@ -48,7 +50,7 @@ public class CAService {
 		cif.keyUsage(
 				KeyUsageExtension.KEY_CERTSIGN,
 				KeyUsageExtension.CRL_SIGN);
-		cif.extendedKeyUsage(CertInfoFactory.EKU_OCSP);
+		cif.extendedKeyUsage(SunCertInfoFactory.EKU_OCSP);
 		X509CertInfo certInfo = cif.build();
 
 		PrivateKey signingKey = keyPair.getPrivate();
@@ -57,8 +59,12 @@ public class CAService {
 		return newCert;
 	}
 
-	public X509Certificate generateCertificate(PKCS10 pkcs10) throws CertificateException, IOException, InvalidKeyException, NoSuchAlgorithmException, NoSuchProviderException, SignatureException {
-		CertInfoFactory cif = CertInfoFactory.newFactory();
+	/* (non-Javadoc)
+	 * @see org.pvv.rolfn.pkiutil.sun.CAService#generateCertificate(sun.security.pkcs10.PKCS10)
+	 */
+	public X509Certificate generateCertificate(byte csr[]) throws GeneralSecurityException, IOException {
+		PKCS10 pkcs10 = decodeCsr(csr);
+		SunCertInfoFactory cif = SunCertInfoFactory.newFactory();
 		cif.isNotCa();
 		cif.copyCsr(pkcs10);
 		cif.copyIssuer(caCert);
@@ -69,7 +75,7 @@ public class CAService {
 				KeyUsageExtension.KEY_AGREEMENT,
 				KeyUsageExtension.KEY_ENCIPHERMENT,
 				KeyUsageExtension.DIGITAL_SIGNATURE);
-		cif.extendedKeyUsage(CertInfoFactory.EKU_CLIENT, CertInfoFactory.EKU_SERVER);
+		cif.extendedKeyUsage(SunCertInfoFactory.EKU_CLIENT, SunCertInfoFactory.EKU_SERVER);
 		X509CertInfo certInfo = cif.build();
 
 		PrivateKey signingKey = caKeyPair.getPrivate();
@@ -103,6 +109,9 @@ public class CAService {
 		return new PKCS10(Base64.getMimeDecoder().decode(request));
 	}
 
+	/* (non-Javadoc)
+	 * @see org.pvv.rolfn.pkiutil.sun.CAService#getCaCert()
+	 */
 	public X509Certificate getCaCert() {
 		return caCert;
 	}

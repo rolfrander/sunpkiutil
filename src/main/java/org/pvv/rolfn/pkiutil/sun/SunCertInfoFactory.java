@@ -1,4 +1,4 @@
-package org.pvv.rolfn.pkiutil;
+package org.pvv.rolfn.pkiutil.sun;
 import sun.security.pkcs.PKCS9Attribute;
 import sun.security.pkcs10.PKCS10;
 import sun.security.pkcs10.PKCS10Attribute;
@@ -41,7 +41,7 @@ import java.util.Date;
 import java.util.Vector;
  
 
-public class CertInfoFactory {
+public class SunCertInfoFactory {
 	private static final int numBits = 64;
 	
 	public static final String idKp = "1.3.6.1.5.5.7.3";
@@ -63,11 +63,11 @@ public class CertInfoFactory {
 		}
 	}
 	
-	public static CertInfoFactory newFactory() throws CertificateException, IOException {
-		return new CertInfoFactory();
+	public static SunCertInfoFactory newFactory() throws CertificateException, IOException {
+		return new SunCertInfoFactory();
 	}
 
-	protected CertInfoFactory() throws CertificateException, IOException {
+	protected SunCertInfoFactory() throws CertificateException, IOException {
 		certInfo.set(X509CertInfo.SERIAL_NUMBER, new CertificateSerialNumber(new BigInteger(numBits, new SecureRandom())));
 		certInfo.set(X509CertInfo.VERSION, new CertificateVersion(CertificateVersion.V3));
 		isNotCa();
