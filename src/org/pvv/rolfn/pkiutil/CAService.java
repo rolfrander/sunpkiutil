@@ -103,4 +103,8 @@ public class CAService {
 		return new PKCS10(Base64.getMimeDecoder().decode(request));
 	}
 
+	public X509Certificate getCaCert() {
+		return caCert;
+	}
+
 }

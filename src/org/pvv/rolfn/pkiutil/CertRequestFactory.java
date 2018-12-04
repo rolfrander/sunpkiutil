@@ -73,7 +73,7 @@ public class CertRequestFactory {
 		if(names == null) {
 			names = new GeneralNames();
 			SubjectAlternativeNameExtension san = new SubjectAlternativeNameExtension(names);
-			addExtensionRequest(SubjectAlternativeNameExtension.NAME, san);
+			addExtensionRequest(SubjectAlternativeNameExtension.IDENT, san);
 		}
 		return names;
 	}

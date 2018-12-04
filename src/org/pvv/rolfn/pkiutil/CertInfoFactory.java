@@ -2,6 +2,7 @@ package org.pvv.rolfn.pkiutil;
 import sun.security.pkcs.PKCS9Attribute;
 import sun.security.pkcs10.PKCS10;
 import sun.security.pkcs10.PKCS10Attribute;
+import sun.security.util.DerValue;
 import sun.security.util.ObjectIdentifier;
 import sun.security.x509.AlgorithmId;
 import sun.security.x509.AuthorityKeyIdentifierExtension;
@@ -27,7 +28,6 @@ import sun.security.x509.X509CertInfo;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.security.InvalidKeyException;
-import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
 import java.security.Principal;
@@ -98,9 +98,8 @@ public class CertInfoFactory {
 	}
 
 	public void keyIdentifier(PublicKey key) throws NoSuchAlgorithmException, CertificateException, IOException {
-	  MessageDigest sha1 = MessageDigest.getInstance("SHA1");
-	  byte[] ski = sha1.digest(key.getEncoded());
-	  getExt().set(SubjectKeyIdentifierExtension.IDENT, new SubjectKeyIdentifierExtension(ski));
+		KeyIdentifier ski = new KeyIdentifier(key);
+		getExt().set(SubjectKeyIdentifierExtension.IDENT, new SubjectKeyIdentifierExtension(ski.getIdentifier()));
 	}
 
 	public void keyUsage(String... attributes) throws IOException, CertificateException {
@@ -120,9 +119,10 @@ public class CertInfoFactory {
 	public void copyIssuer(X509Certificate caCert) throws CertificateException, IOException {
 		Principal subjectDN = caCert.getSubjectDN();
 		setIssuerName(subjectDN);
-		byte[] caSKIBytes = caCert.getExtensionValue(PKIXExtensions.SubjectKey_Id.toString());
-		if(caSKIBytes != null) {
-			KeyIdentifier caKeyIdentifier = new KeyIdentifier(caSKIBytes);
+		byte[] skiDER = caCert.getExtensionValue(PKIXExtensions.SubjectKey_Id.toString());
+		if(skiDER != null) {
+			DerValue caSKI = new DerValue(skiDER);
+			KeyIdentifier caKeyIdentifier = new KeyIdentifier(caSKI);
 			AuthorityKeyIdentifierExtension aki = new AuthorityKeyIdentifierExtension(caKeyIdentifier, null, null);
 			getExt().set(AuthorityKeyIdentifierExtension.IDENT, aki);
 		}
@@ -149,7 +149,7 @@ public class CertInfoFactory {
 			if(ext != null) {
 				for(Extension e: ext.getAllExtensions()) {
 					if(e instanceof SubjectAlternativeNameExtension) {
-						getExt().set(SubjectAlternativeNameExtension.NAME, e);
+						getExt().set(SubjectAlternativeNameExtension.IDENT, e);
 					}
 				}
 			}
@@ -168,7 +168,7 @@ public class CertInfoFactory {
 	private GeneralNames getSAN() throws CertificateException, IOException {
 		if(names == null) {
 			names = new GeneralNames();
-			getExt().set(SubjectAlternativeNameExtension.NAME, new SubjectAlternativeNameExtension(names));
+			getExt().set(SubjectAlternativeNameExtension.IDENT, new SubjectAlternativeNameExtension(names));
 		}
 		return names;
 	}
